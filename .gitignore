@@ -1,0 +1,6 @@
+*.tvc
+*.abi.json
+*.keys.json
+*.log
+.solc_imports
+
