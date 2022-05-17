@@ -1,12 +1,14 @@
 pragma ton-solidity >=0.47.0;
+pragma AbiHeader expire;
 
 contract Game {
 	mapping(address => uint128) public balance;
+	mapping(address => uint8[]) public randomNumbers;
 
-	function play() public view {
-		tvm.accept(); //delete this line
+	function play() public {
 		uint8 spins = countSpins(balance[msg.sender]);
 		uint8[] rand = getRandomNumbers(spins);
+		randomNumbers[msg.sender] = rand;
 		uint128 reward = calculateRewards(rand);
 		sendReward(msg.sender, reward);
 	}
@@ -46,8 +48,16 @@ contract Game {
 		if (msg.value >= 1 ever) {
 			tvm.accept();
 			balance.add(msg.sender, 0);
-			balance[msg.sender] += msg.value;
+			balance[msg.sender] = msg.value;
 		}
 		play();
+	}
+
+	function getUserRandomNumbers(address wallet)
+		public
+		view
+		returns (uint8[])
+	{
+		return randomNumbers[wallet];
 	}
 }
