@@ -6,10 +6,12 @@ import "https://raw.githubusercontent.com/tonlabs/debots/main/Debot.sol";
 import "https://raw.githubusercontent.com/tonlabs/DeBot-IS-consortium/main/Terminal/Terminal.sol";
 import "https://raw.githubusercontent.com/tonlabs/DeBot-IS-consortium/main/UserInfo/UserInfo.sol";
 import "https://raw.githubusercontent.com/tonlabs/DeBot-IS-consortium/main/Sdk/Sdk.sol";
-import "./Game.sol";
+import "https://raw.githubusercontent.com/tonlabs/DeBot-IS-consortium/main/Menu/Menu.sol";
+import "https://raw.githubusercontent.com/tonlabs/DeBot-IS-consortium/main/AmountInput/AmountInput.sol";
+import "./GameDeployer.sol";
 
-interface IGameDeployer {
-	function deployAndPlay(address userWallet) external;
+interface IGame {
+	function randomNumbers() external returns (mapping(uint8 => uint8[]));
 }
 
 interface IWallet {
@@ -23,32 +25,74 @@ interface IWallet {
 }
 
 contract SlotDebot is Debot {
-	uint256 public userPubkey;
 	address public userWallet;
 	address public gameAddress;
-	TvmCell static public gameCode;	
-	address static public gameDeployer;
-	address static public cashier;
+	TvmCell public static gameCode;
+	address public static gameDeployer;
+	address public static cashier;
+	uint128 public amountInput;
 
-	function start() public override {
-		UserInfo.getPublicKey(tvm.functionId(setPubkey));
+	bytes m_icon;
+
+	function setIcon(bytes icon) public {
+		require(msg.pubkey() == tvm.pubkey(), 100);
+		tvm.accept();
+		m_icon = icon;
 	}
 
-	function setPubkey(uint256 value) public {
-		userPubkey = value;
+	function _menu(uint32 handleMenu1) private pure inline { 
+		Menu.select(
+			"SlotDebot",
+			"description for menu",
+			[MenuItem("PLAY", "", handleMenu1)]
+		);
+	}
+
+	function start() public override {
+		_menu(tvm.functionId(getWallet));
+	}
+
+	function getBalance() public view {
+		Sdk.getBalance(tvm.functionId(getUserWalletBalance), userWallet);
+	}
+
+	function getUserWalletBalance(uint128 nanotokens) public pure {
+		if (nanotokens < 1e9) {
+			Terminal.print(
+				0,
+				"You have low balance on your Surf wallet. Please deposit more."
+			);
+		} else {
+			if (nanotokens > 50e9) nanotokens = 50e9; // max 50e9
+			AmountInput.get(
+				tvm.functionId(setAmount),
+				"One spin 1 Ever",
+				9,
+				1e9,
+				nanotokens
+			);
+		}
+	}
+
+	function setAmount(uint128 value) public {
+		amountInput = uint128(value / 1e9) * 1e9; //floor
+		setGameAddress();
+	}
+
+	function getWallet() public pure {
 		UserInfo.getAccount(tvm.functionId(setWallet));
 	}
 
 	function setWallet(address value) public {
 		userWallet = value;
-		setGameAddress();
+		getBalance();
 	}
 
 	function setGameAddress() public {
 		gameAddress = address(
 			tvm.hash(
 				tvm.buildStateInit({
-					code: gameCode,			
+					code: gameCode,
 					varInit: {cashier: cashier, userWallet: userWallet},
 					contr: Game
 				})
@@ -58,22 +102,13 @@ contract SlotDebot is Debot {
 	}
 
 	function setGameStatus(int8 acc_type) public view {
-		//debug information - comment it
-		Terminal.print(0, format("userPubkey: {}", userPubkey));
-		Terminal.print(0, format("Wallet set to {} ", userWallet));
-		Terminal.print(0, format("GameDeployer set to {} ", gameDeployer));
-		Terminal.print(0, format("Game address: {}", gameAddress));
-		Terminal.print(0, format("Game status {}", acc_type));
-		Terminal.print(0, format("Cashier set to {}", cashier));
-		// end of debug information
-
+		optional(uint256) pubkey;
 		if (acc_type == -1) {
-			Terminal.print(0, "Need to deploy");
+			//send transaction to gameDeployer
 			TvmCell payload = tvm.encodeBody(
-				IGameDeployer.deployAndPlay,
+				GameDeployer.deployAndPlay,
 				userWallet
 			);
-			optional(uint256) pubkey;
 			TvmCell message = tvm.buildExtMsg({
 				dest: userWallet,
 				time: 0,
@@ -81,7 +116,7 @@ contract SlotDebot is Debot {
 				call: {
 					IWallet.sendTransaction,
 					gameDeployer,
-					1000000000,
+					amountInput,
 					false,
 					3,
 					payload
@@ -89,25 +124,71 @@ contract SlotDebot is Debot {
 				sign: true,
 				pubkey: pubkey,
 				callbackId: tvm.functionId(depositCallback),
-				onErrorId: tvm.functionId(depositErrorCallback)
+				onErrorId: tvm.functionId(errorCallback)
+			});
+			tvm.sendrawmsg(message, 3);
+		} else {
+			//send message to Game.sol
+			TvmCell none;
+			TvmCell message = tvm.buildExtMsg({
+				dest: userWallet,
+				time: 0,
+				expire: 0,
+				call: {
+					IWallet.sendTransaction,
+					gameAddress,
+					amountInput,
+					false,
+					3,
+					none
+				},
+				sign: true,
+				pubkey: pubkey,
+				callbackId: tvm.functionId(depositCallback),
+				onErrorId: tvm.functionId(errorCallback)
 			});
 			tvm.sendrawmsg(message, 3);
 		}
-		// Terminal.print(0, format("Game status {}", acc_type));
 	}
 
-	function depositCallback() public pure {
-		Terminal.print(0, "Success! {}");
+	function depositCallback() public view {
+		IGame(gameAddress).randomNumbers{
+			time: 0,
+			expire: 0,
+			sign: false,
+			callbackId: tvm.functionId(getUserRandomNumbersCallback),
+			onErrorId: tvm.functionId(errorCallback)
+		}().extMsg;
 	}
 
-	function depositErrorCallback(uint32 sdkError, uint32 exitCode)
-		public
-		pure
-	{
+	function errorCallback(uint32 sdkError, uint32 exitCode) public pure {
 		Terminal.print(
 			0,
 			format("sdkError: {}, exitCode: {}", sdkError, exitCode)
 		);
+	}
+
+	function getUserRandomNumbersCallback(
+		mapping(uint8 => uint8[]) randomNumbers
+	) public {
+		string[] slotEmoji = ["💎", "🍌", "🍎", "🍊", "🍉", "🍋"];
+		for ((, uint8[] value): randomNumbers) {
+			string profit = "";
+			if (value[3] > 0) {
+				profit = format("+{}", value[3]);
+			}
+			Terminal.print(
+				0,
+				format(
+					"{}  {}  {}  {}",
+					slotEmoji[uint8(value[0]) - 1],
+					slotEmoji[uint8(value[1]) - 1],
+					slotEmoji[uint8(value[2]) - 1],
+					profit
+				)
+			);
+		}
+		start();
 	}
 
 	function getDebotInfo()
@@ -128,19 +209,19 @@ contract SlotDebot is Debot {
 			bytes icon
 		)
 	{
-		name = "Test DeBot";
+		name = "Slot DeBot";
 		version = "0.0.1";
-		publisher = "publisher name";
-		key = "How to use";
-		author = "Author name";
+		publisher = "pizzza777";
+		key = "Game";
+		author = "pizzza777";
 		support = address.makeAddrStd(
 			0,
-			0x000000000000000000000000000000000000000000000000000000000000
+			0x7c748782a188ae06cd79132ce2f3622dd0b7000708cc9efe504f6d3b72a32088
 		);
-		hello = "Hello, i am an test DeBot.";
+		hello = "Hello, I'm Slot DeBot";
 		language = "en";
 		dabi = m_debotAbi.get();
-		icon = "";
+		icon = m_icon;
 	}
 
 	function getRequiredInterfaces()
@@ -149,6 +230,6 @@ contract SlotDebot is Debot {
 		override
 		returns (uint256[] interfaces)
 	{
-		return [Terminal.ID, UserInfo.ID, Sdk.ID];
+		return [Terminal.ID, UserInfo.ID, Sdk.ID, Menu.ID, AmountInput.ID];
 	}
 }

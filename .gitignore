@@ -1,6 +1,11 @@
 *.tvc
 *.abi.json
+*.tvc
+*.txt
+*.mjs
 *.keys.json
 *.log
 .solc_imports
-
+node_modules
+!artifacts/multisig.abi.json
+!artifacts/multisig.tvc

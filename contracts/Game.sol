@@ -1,18 +1,24 @@
 pragma ton-solidity >=0.59.4;
 pragma AbiHeader expire;
-// pragma AbiHeader time;
-// pragma AbiHeader pubkey;
 
 interface ICashier {
-	function pay(uint128 amount, address dest) external;
+	function pay(uint128 amount, address userWallet) external;
 }
 
 contract Game {
 	mapping(uint8 => uint8[]) public randomNumbers;
-	uint256 public b = 0;
-	address static cashier;
-	address static userWallet;
-	uint128 public msgv;
+	address public static cashier;
+	address public static userWallet;
+	// for tests
+	// address cashier =
+	// 	address(
+	// 		0x66724c81ea720337600edc7fc19046a4d2b42dbe335dafd5b39cd96781ad95b7
+	// 	);
+	// address userWallet =
+	// 	address(
+	// 		0xd8eb71bef7353a98458be0d3b0a0fd37e09cad6b2b7a98f45ae082b7fad51f4d
+	// 	);
+
 	//1-gem
 	//2-banana
 	//3-apple
@@ -36,7 +42,7 @@ contract Game {
 		}
 		//any 2 gems
 		if (
-			(a1 == 1 || a2 == 1) || (a2 == 1 || a3 == 1) || (a3 == 1 || a1 == 1)
+			(a1 == 1 && a2 == 1) || (a2 == 1 && a3 == 1) || (a3 == 1 && a1 == 1)
 		) {
 			return 4;
 		}
@@ -47,50 +53,51 @@ contract Game {
 		return 0;
 	}
 
-	function play() public {
-		
-		b = 15;
-		uint8 spins = countSpins(msg.value);b = 52;
-		randomNumbers = getRandomNumbers(spins);b = 53;
-		uint128 reward = calculateRewards(randomNumbers);b = 54;
-		if (reward > 0) sendReward(userWallet, reward);b = 55;
-	}
-
-	function calculateRewards(mapping(uint8 => uint8[]) rand)
-		public
-		pure
-		returns (uint128 reward)
-	{
-		reward = 0;
-		for ((, uint8[] value) : rand) { 
-			reward += winningCombinations(
-				value[0],
-				value[1],
-				value[2]
-			);
-		}
-	}
-
-	function sendReward(address receiver, uint128 reward) public {
-		b = 37;
-		if (reward < (address(this).balance - 1e9)) {
-			//remain 1 ever
-			b = 40;
-			receiver.transfer(reward);
+	function play(uint128 _msgValue) public returns (string) {
+		uint8 spins = countSpins(_msgValue);
+		(uint128 reward, ) = getRandomNumbersAndRewards(spins);
+		if (reward >= 1e9) {
+			string sender = sendReward(userWallet, reward);
+			return sender;
 		} else {
-			b = 43;
-			ICashier(cashier).pay{value: 1e8, flag: 3}(reward, receiver);
+			return "Reward doesn't exceed 1e9";
 		}
 	}
 
-	function getRandomNumbers(uint8 spins) public pure returns (mapping(uint8 => uint8[]) a) {
-		rnd.shuffle(tx.timestamp);
+	function sendReward(address receiver, uint128 reward)
+		public
+		view
+		returns (string sender)
+	{
+		//remain 1 ever
+		if (reward < (address(this).balance - 1e9)) {
+			receiver.transfer(reward);
+			return "Game";
+		} else {
+			ICashier(cashier).pay{value: 1 ever}(reward, receiver);
+			return "Cashier";
+		}
+	}
+
+	function getRandomNumbersAndRewards(uint8 spins)
+		public
+		returns (uint128 rewards, mapping(uint8 => uint8[]) rn)
+	{
+		tvm.accept(); //for testing only comment this line
 		for (uint8 index = 0; index < spins; index++)
-			a.add(index, [rnd.next(6) + 1, rnd.next(6) + 1, rnd.next(6) + 1]);
+			rn.add(index, [rnd.next(6) + 1, rnd.next(6) + 1, rnd.next(6) + 1]);
+
+		for ((uint8 k, uint8[] value): rn) {
+			uint8 reward = winningCombinations(value[0], value[1], value[2]);
+			rn[k].push(reward);
+			rewards += reward; //in evers
+		}
+		randomNumbers = rn;
+		rewards = rewards * 1e9; //in nano evers
 	}
 
 	function countSpins(uint128 playerBalance) public pure returns (uint8) {
-		return uint8(playerBalance / 1000000000);
+		return uint8(playerBalance / 1e9);
 	}
 
 	function getCode() public pure returns (TvmCell) {
@@ -98,15 +105,16 @@ contract Game {
 	}
 
 	receive() external {
-		if (msg.value >= 1e9) {
-			tvm.accept();
-			b = b + 2;
+		require(msg.value > 1e8, 777, "msg.value must be greater than 1e8");
+		tvm.accept();
+		// 50 spins only allowed. Otherwise, the contract will be terminated: out of gas
+		// if small (less than 1 ever) amount sent return money
+		if (msg.value > 50e9 || msg.value < 1e9) {
+			//return money to sender
+			msg.sender.transfer(msg.value);
+		} else {
+			//play game
+			play(msg.value);
 		}
-		play();
-	}
-
-	function showRandomNumbers() public view returns (mapping (uint8=>uint8[])){	
-		//randomNumbers.add(1, [1,2,3]);			
-		return randomNumbers;
 	}
 }

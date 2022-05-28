@@ -16,13 +16,6 @@ contract Cashier {
 	bool public got = false;
 
 	function pay(uint128 amount, address userWallet) public {
-		// tvm.accept();
-		// _tvmPubkey = tvm.pubkey();
-		// _msgPubkey = msg.pubkey();
-		// _expected = _getExpectedAddress(userWallet);
-		// _sender = msg.sender;
-		// _amount = amount;
-		// _userWallet = userWallet;
 		require(msg.value >= 1e8, 1001, "Insufficient funds");
 		tvm.accept();
 		require(
@@ -34,7 +27,11 @@ contract Cashier {
 		userWallet.transfer(amount, true, 3);
 	}
 
-	function _getExpectedAddress(address uWallet) public returns (address) {
+	function _getExpectedAddress(address uWallet)
+		public
+		view
+		returns (address)
+	{
 		return
 			address(
 				tvm.hash(

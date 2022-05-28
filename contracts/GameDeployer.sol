@@ -1,8 +1,7 @@
 pragma ton-solidity >=0.59.4;
 pragma AbiHeader expire;
-pragma AbiHeader time;
-pragma AbiHeader pubkey;
 
+ 
 //deploy Game and bet
 import "./Game.sol";
 
@@ -22,11 +21,11 @@ contract GameDeployer {
 
 		address gameAddress = new Game{
 			stateInit: stateInit,
-			value: msg.value,
+			value: 2e8,
 			wid: address(this).wid,
 			flag: 3
 		}();
 
-		gameAddress.transfer(2 ever, true, 3);
+		gameAddress.transfer(msg.value, false, 3);
 	}
 }
