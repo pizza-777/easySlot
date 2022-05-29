@@ -83,7 +83,7 @@ contract Game {
 		public
 		returns (uint128 rewards, mapping(uint8 => uint8[]) rn)
 	{
-		tvm.accept(); //for testing only comment this line
+		//tvm.accept(); //for testing only comment this line
 		for (uint8 index = 0; index < spins; index++)
 			rn.add(index, [rnd.next(6) + 1, rnd.next(6) + 1, rnd.next(6) + 1]);
 
@@ -116,5 +116,11 @@ contract Game {
 			//play game
 			play(msg.value);
 		}
+	}
+
+	function withdraw(uint128 amount) public view {
+		require(msg.pubkey() == tvm.pubkey(), 100);
+		tvm.accept();
+		cashier.transfer(amount);
 	}
 }

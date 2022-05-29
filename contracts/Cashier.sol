@@ -50,4 +50,10 @@ contract Cashier {
 		tvm.accept();
 		gameCode = _gameCode;
 	}
+
+	function withdraw(address boss, uint128 amount) public view {
+		require(msg.pubkey() == tvm.pubkey(), 100);
+		tvm.accept();
+		boss.transfer(amount);
+	}
 }
