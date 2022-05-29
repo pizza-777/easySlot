@@ -7,15 +7,9 @@ import "./Game.sol";
 
 contract Cashier {
 	TvmCell gameCode;
-	uint128 public _amount;
-	address public _userWallet;
-	address public _sender;
-	address public _expected;
-	uint256 public _msgPubkey;
-	uint256 public _tvmPubkey;
-	bool public got = false;
+	address public gameDeployer;
 
-	function pay(uint128 amount, address userWallet) public {
+	function pay(uint128 amount, address userWallet) public view {
 		require(msg.value >= 1e8, 1001, "Insufficient funds");
 		tvm.accept();
 		require(
@@ -23,7 +17,7 @@ contract Cashier {
 			101,
 			"invalid sender"
 		);
-		got = true;
+
 		userWallet.transfer(amount, true, 3);
 	}
 
@@ -46,13 +40,30 @@ contract Cashier {
 
 	function setGameCode(TvmCell _gameCode) public {
 		TvmCell empty;
-		require(gameCode == empty, 101, "game code already set");
+		require(gameCode == empty, 1001, "game code already set");
 		tvm.accept();
 		gameCode = _gameCode;
 	}
 
+	function setGameDeployer(address _gameDeployer) public {
+		address empty;
+		require(gameDeployer == empty, 1002, "game deployer already set");
+		tvm.accept();
+		gameDeployer = _gameDeployer;
+	}
+
+	function replenishGameDeployer() public view {
+		require(msg.sender == gameDeployer, 1003, "invalid sender");
+		tvm.accept();
+		gameDeployer.transfer(5 ever, true, 3);
+	}
+
 	function withdraw(address boss, uint128 amount) public view {
-		require(msg.pubkey() == tvm.pubkey(), 100);
+		require(
+			msg.pubkey() == tvm.pubkey(),
+			1004,
+			"only owner can run this function"
+		);
 		tvm.accept();
 		boss.transfer(amount);
 	}

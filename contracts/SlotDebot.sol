@@ -42,7 +42,7 @@ contract SlotDebot is Debot {
 
 	function _menu(uint32 handleMenu1) private pure inline { 
 		Menu.select(
-			"SlotDebot",
+			"⬇️",
 			"description for menu",
 			[MenuItem("PLAY", "", handleMenu1)]
 		);
@@ -210,7 +210,7 @@ contract SlotDebot is Debot {
 		)
 	{
 		name = "Slot DeBot";
-		version = "0.0.1";
+		version = "7.7.7";
 		publisher = "pizzza777";
 		key = "Game";
 		author = "pizzza777";
@@ -218,7 +218,7 @@ contract SlotDebot is Debot {
 			0,
 			0x7c748782a188ae06cd79132ce2f3622dd0b7000708cc9efe504f6d3b72a32088
 		);
-		hello = "Hello, I'm Slot DeBot";
+		hello = "RTP(return to player) ≈ 95%";
 		language = "en";
 		dabi = m_debotAbi.get();
 		icon = m_icon;
