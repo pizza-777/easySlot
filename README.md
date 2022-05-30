@@ -5,10 +5,12 @@ Easy slot machine writen on smart contracts.
 #### deploy locally
 
 Add surf1 signer (your surf wallet) to the signers list and run:
-
 ```bash
-./l.sh
+./l.sh # local or
+./d.sh # dev
 ```
+
+debot in dev network 0:b5dc79a1faa1af6ad1a639bdd3a60f33ce55005b2059d11aaa24458457ac5010
 
 #### RTP (return to player)
 

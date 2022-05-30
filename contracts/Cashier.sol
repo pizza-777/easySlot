@@ -62,7 +62,7 @@ contract Cashier {
 		require(
 			msg.pubkey() == tvm.pubkey(),
 			1004,
-			"only owner can run this function"
+			"only boss can run this function"
 		);
 		tvm.accept();
 		boss.transfer(amount);

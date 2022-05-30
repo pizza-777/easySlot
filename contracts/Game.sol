@@ -119,7 +119,11 @@ contract Game {
 	}
 
 	function withdraw(uint128 amount) public view {
-		require(msg.pubkey() == tvm.pubkey(), 100);
+		require(
+			msg.pubkey() == tvm.pubkey(),
+			1004,
+			"only boss can run this function"
+		);
 		tvm.accept();
 		cashier.transfer(amount);
 	}
