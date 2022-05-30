@@ -9,6 +9,8 @@ contract Game {
 	mapping(uint8 => uint8[]) public randomNumbers;
 	address public static cashier;
 	address public static userWallet;
+
+	uint static salt;//for deployment
 	// for tests
 	// address cashier =
 	// 	address(

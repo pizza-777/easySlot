@@ -9,6 +9,8 @@ contract Cashier {
 	TvmCell gameCode;
 	address public gameDeployer;
 
+	uint static salt;//for deployment
+
 	function pay(uint128 amount, address userWallet) public view {
 		require(msg.value >= 1e8, 1001, "Insufficient funds");
 		tvm.accept();

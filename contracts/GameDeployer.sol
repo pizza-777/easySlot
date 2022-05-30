@@ -10,6 +10,8 @@ contract GameDeployer {
 	address static cashier;
 	uint128 public balance;
 
+	uint static salt;//for deployment
+
 	function deployAndPlay(address userWallet) public {
 		require(msg.value > 1e8, 777, "msg.value must be greater than 1e8");
 		tvm.accept();
@@ -30,7 +32,7 @@ contract GameDeployer {
 		address gameAddress = new Game{
 			stateInit: stateInit,
 			value: 2e8,
-			wid: address(this).wid,
+			wid: msg.sender.wid,
 			flag: 3
 		}();
 

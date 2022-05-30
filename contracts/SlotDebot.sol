@@ -32,6 +32,8 @@ contract SlotDebot is Debot {
 	address public static cashier;
 	uint128 public amountInput;
 
+	uint static salt;//for deployment
+
 	bytes m_icon;
 
 	function setIcon(bytes icon) public {
