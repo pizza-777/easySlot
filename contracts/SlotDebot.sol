@@ -26,13 +26,14 @@ interface IWallet {
 
 contract SlotDebot is Debot {
 	address public userWallet;
+	uint256 public shardSalt;
 	address public gameAddress;
 	TvmCell public static gameCode;
 	address public static gameDeployer;
 	address public static cashier;
 	uint128 public amountInput;
 
-	uint static salt;//for deployment
+//	uint256 static salt; //for deployment
 
 	bytes m_icon;
 
@@ -42,7 +43,7 @@ contract SlotDebot is Debot {
 		m_icon = icon;
 	}
 
-	function _menu(uint32 handleMenu1) private pure inline { 
+	function _menu(uint32 handleMenu1) private inline pure {
 		Menu.select(
 			"⬇️",
 			"description for menu",
@@ -87,19 +88,36 @@ contract SlotDebot is Debot {
 
 	function setWallet(address value) public {
 		userWallet = value;
+		//userWalletShardNumber = uint8(userWallet.value >> 252);
 		getBalance();
 	}
 
 	function setGameAddress() public {
-		gameAddress = address(
-			tvm.hash(
-				tvm.buildStateInit({
-					code: gameCode,
-					varInit: {cashier: cashier, userWallet: userWallet},
-					contr: Game
-				})
-			)
-		);
+		// Game must be in the same shard as userWallet
+		uint8 _userWalletShardNumber = uint8(userWallet.value >> 252);
+		uint256 _shardSalt = 0; // needed to make sure game is in the same shard
+		while (true) {
+			address addr = address(
+				tvm.hash(
+					tvm.buildStateInit({
+						code: gameCode,
+						varInit: {
+							cashier: cashier,
+							userWallet: userWallet,
+							shardSalt: _shardSalt
+						},
+						contr: Game,
+						pubkey: tvm.pubkey()
+					})
+				)
+			);
+			if (uint8(addr.value >> 252) == _userWalletShardNumber) {
+				gameAddress = addr;
+				shardSalt = _shardSalt;
+				break;
+			}
+			_shardSalt++;
+		}
 		Sdk.getAccountType(tvm.functionId(setGameStatus), gameAddress);
 	}
 
@@ -109,7 +127,8 @@ contract SlotDebot is Debot {
 			//send transaction to gameDeployer
 			TvmCell payload = tvm.encodeBody(
 				GameDeployer.deployAndPlay,
-				userWallet
+				userWallet,
+				shardSalt
 			);
 			TvmCell message = tvm.buildExtMsg({
 				dest: userWallet,
@@ -153,7 +172,7 @@ contract SlotDebot is Debot {
 		}
 	}
 
-	function depositCallback() public view {
+	function depositCallback() public view {		
 		IGame(gameAddress).randomNumbers{
 			time: 0,
 			expire: 0,

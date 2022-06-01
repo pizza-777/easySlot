@@ -8,22 +8,25 @@ import "./Game.sol";
 contract Cashier {
 	TvmCell gameCode;
 	address public gameDeployer;
+	//uint static salt;//for deployment
 
-	uint static salt;//for deployment
-
-	function pay(uint128 amount, address userWallet) public view {
+	function pay(
+		uint128 amount,
+		address userWallet,
+		uint256 shardSalt
+	) public view {
 		require(msg.value >= 1e8, 1001, "Insufficient funds");
 		tvm.accept();
 		require(
-			msg.sender == _getExpectedAddress(userWallet),
+			msg.sender == _getExpectedAddress(userWallet, shardSalt),
 			101,
 			"invalid sender"
 		);
 
-		userWallet.transfer(amount, true, 3);
+		userWallet.transfer(amount, false, 3);
 	}
 
-	function _getExpectedAddress(address uWallet)
+	function _getExpectedAddress(address uWallet, uint256 shardSalt)
 		public
 		view
 		returns (address)
@@ -33,8 +36,13 @@ contract Cashier {
 				tvm.hash(
 					tvm.buildStateInit({
 						code: gameCode,
-						varInit: {cashier: address(this), userWallet: uWallet},
-						contr: Game
+						varInit: {
+							cashier: address(this),
+							userWallet: uWallet,
+							shardSalt: shardSalt
+						},
+						contr: Game,
+						pubkey: tvm.pubkey()
 					})
 				)
 			);

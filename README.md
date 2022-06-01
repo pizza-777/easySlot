@@ -10,7 +10,7 @@ Add surf1 signer (your surf wallet) to the signers list and run:
 ./d.sh # dev
 ```
 
-debot in dev network ```0:9aa422e35f48268cdc6684b09c18da3498aa529b4b609b04f65ad1f932461287```
+debot in dev network ```0:cc4a01a3183c490172431a8adcda702d7d3d80df1e1a106f5f51ba183dad63ea```
 
 #### RTP (return to player)
 

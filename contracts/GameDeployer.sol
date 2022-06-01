@@ -10,9 +10,9 @@ contract GameDeployer {
 	address static cashier;
 	uint128 public balance;
 
-	uint static salt;//for deployment
+	//uint static salt;//for deployment
 
-	function deployAndPlay(address userWallet) public {
+	function deployAndPlay(address userWallet, uint shardSalt) public {
 		require(msg.value > 1e8, 777, "msg.value must be greater than 1e8");
 		tvm.accept();
 		// 50 spins only allowed. Otherwise, the contract will be terminated: out of gas
@@ -25,8 +25,9 @@ contract GameDeployer {
 
 		TvmCell stateInit = tvm.buildStateInit({
 			code: gameCode,
-			varInit: {cashier: cashier, userWallet: userWallet},
-			contr: Game
+			varInit: {cashier: cashier, userWallet: userWallet, shardSalt: shardSalt},
+			contr: Game,
+			pubkey: tvm.pubkey()
 		});
 
 		address gameAddress = new Game{
