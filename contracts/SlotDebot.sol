@@ -33,7 +33,7 @@ contract SlotDebot is Debot {
 	address public static cashier;
 	uint128 public amountInput;
 
-//	uint256 static salt; //for deployment
+	//	uint256 static salt; //for deployment
 
 	bytes m_icon;
 
@@ -52,7 +52,15 @@ contract SlotDebot is Debot {
 	}
 
 	function start() public override {
-		_menu(tvm.functionId(getWallet));
+		Sdk.getBalance(tvm.functionId(getCashierBalance), cashier);
+	}
+
+	function getCashierBalance(uint128 nanotokens) public pure {
+		if (nanotokens < 21e9) {
+			Terminal.print(0, "Slot is empty. Call to @pizzza777");
+		} else {
+			_menu(tvm.functionId(getWallet));
+		}
 	}
 
 	function getBalance() public view {
@@ -172,7 +180,7 @@ contract SlotDebot is Debot {
 		}
 	}
 
-	function depositCallback() public view {		
+	function depositCallback() public view {
 		IGame(gameAddress).randomNumbers{
 			time: 0,
 			expire: 0,

@@ -65,7 +65,7 @@ contract Cashier {
 	function replenishGameDeployer() public view {
 		require(msg.sender == gameDeployer, 1003, "invalid sender");
 		tvm.accept();
-		gameDeployer.transfer(5 ever, true, 3);
+		gameDeployer.transfer(2 ever, true, 3);
 	}
 
 	function withdraw(address boss, uint128 amount) public view {
