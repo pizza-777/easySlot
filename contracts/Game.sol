@@ -2,14 +2,18 @@ pragma ton-solidity >=0.59.4;
 pragma AbiHeader expire;
 
 interface ICashier {
-	function pay(uint128 amount, address userWallet, uint shardSalt) external;
+	function pay(
+		uint128 amount,
+		address userWallet,
+		uint256 shardSalt
+	) external;
 }
 
 contract Game {
 	mapping(uint8 => uint8[]) public randomNumbers;
 	address public static cashier;
 	address public static userWallet;
-	uint public static shardSalt;
+	uint256 public static shardSalt;
 
 	//uint static salt;//for deployment
 	// for tests
@@ -75,9 +79,13 @@ contract Game {
 		//remain 1 ever
 		if (reward < (address(this).balance - 1e9)) {
 			receiver.transfer(reward, true, 3);
+			// if this Game have a lot of money, then send to cashier
+			if(address(this).balance - reward - 1e9 > 50e9) {
+				cashier.transfer(20e9, true, 3);
+			}
 			return "Game";
 		} else {
-			ICashier(cashier).pay{value: 1 ever}(reward, receiver, shardSalt); 
+			ICashier(cashier).pay{value: 1 ever}(reward, receiver, shardSalt);
 			return "Cashier";
 		}
 	}
