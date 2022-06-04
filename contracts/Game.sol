@@ -80,7 +80,7 @@ contract Game {
 		if (reward < (address(this).balance - 1e9)) {
 			receiver.transfer(reward, true, 3);
 			// if this Game have a lot of money, then send to cashier
-			if(address(this).balance - reward - 1e9 > 50e9) {
+			if (address(this).balance - reward - 1e9 > 50e9) {
 				cashier.transfer(20e9, true, 3);
 			}
 			return "Game";
