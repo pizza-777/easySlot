@@ -12,8 +12,8 @@ Set deployment params in this script and run:
 
 <!-- debot in dev network (old version)```0:cc4a01a3183c490172431a8adcda702d7d3d80df1e1a106f5f51ba183dad63ea``` -->
 
-debot in main network
-```0:6a916f04771da274861844cb507cdfabb05fa43d2c3ed855c2873eb9c8a94328```
+<!-- debot in main network
+```0:6a916f04771da274861844cb507cdfabb05fa43d2c3ed855c2873eb9c8a94328``` -->
 
 #### RTP (return to player)
 

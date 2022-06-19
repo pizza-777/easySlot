@@ -60,7 +60,7 @@ contract Game {
 		return 0;
 	}
 
-	function play(uint128 _msgValue) public returns (string) {
+	function play(uint128 _msgValue) private returns (string) {
 		uint8 spins = countSpins(_msgValue);
 		(uint128 reward, ) = getRandomNumbersAndRewards(spins);
 		if (reward >= 1e9) {
@@ -72,7 +72,7 @@ contract Game {
 	}
 
 	function sendReward(address receiver, uint128 reward)
-		public
+		private
 		view
 		returns (string sender)
 	{
