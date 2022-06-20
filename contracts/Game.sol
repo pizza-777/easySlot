@@ -95,6 +95,8 @@ contract Game {
 		returns (uint128 rewards, mapping(uint8 => uint8[]) rn)
 	{
 		//tvm.accept(); //for testing only comment this line
+		//mixed random seed and lt of the current transaction (needed for different results in the same time calling the contract)
+		rnd.shuffle();
 		for (uint8 index = 0; index < spins; index++)
 			rn.add(index, [rnd.next(6) + 1, rnd.next(6) + 1, rnd.next(6) + 1]);
 
